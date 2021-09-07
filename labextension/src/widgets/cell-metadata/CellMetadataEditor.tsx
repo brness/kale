@@ -418,7 +418,7 @@ export class CellMetadataEditor extends React.Component<IProps, IState> {
                     size="small"
                     title="GPU"
                     onClick={_ => this.toggleTagsEditorDialog()}
-                    style={{ width: '5%' }}
+                    style={{ width: '8%' }}
                   >
                     GPU
                   </Button>
