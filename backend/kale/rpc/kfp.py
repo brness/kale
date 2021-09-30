@@ -14,11 +14,15 @@
 
 import kfp
 
-from kale.common import kfputils
+from kale.common import kfputils,podutils
 
 
 def _get_client(host=None):
     return kfp.Client()
+
+
+def get_namespace():
+    return podutils.get_namespace()
 
 
 def list_experiments(request):
@@ -26,7 +30,7 @@ def list_experiments(request):
     c = _get_client()
     experiments = [{"name": e.name,
                     "id": e.id}
-                   for e in c.list_experiments().experiments or []]
+                   for e in c.list_experiments(namespace=get_namespace()).experiments or []]
     return experiments
 
 
@@ -34,7 +38,7 @@ def get_experiment(request, experiment_name):
     """Get a KFP experiment. If it does not exist return None."""
     client = _get_client()
     try:
-        experiment = client.get_experiment(experiment_name=experiment_name)
+        experiment = client.get_experiment(experiment_name=experiment_name,namespace=get_namespace())
     except ValueError as e:
         err_msg = "No experiment is found with name {}".format(experiment_name)
         if err_msg in str(e):
@@ -57,7 +61,7 @@ def create_experiment(request, experiment_name, raise_if_exists=False):
     client = _get_client()
     exp = get_experiment(None, experiment_name)
     if not exp:
-        experiment = client.create_experiment(name=experiment_name)
+        experiment = client.create_experiment(name=experiment_name,namespace=get_namespace())
         return {"id": experiment.id, "name": experiment.name}
     if raise_if_exists:
         raise ValueError("Failed to create experiment, experiment already"

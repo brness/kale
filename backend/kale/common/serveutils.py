@@ -516,7 +516,7 @@ def get_inference_service_host(name: str) -> str:
         return ""
     if url.startswith("http://"):
         url = url[len("http://"):]
-    return url.replace("example.com", "svc.cluster.local")
+    return url.replace("aip.sangfor.com", "svc.cluster.local")
 
 
 def get_inference_service_default_predictor_host(name: str) -> str:
