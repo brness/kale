@@ -53,10 +53,10 @@ apiVersion: %s
 kind: InferenceService
 metadata:
   annotations:
+    queue.sidecar.serving.knative.dev/resourcePercentage: "25"
     sidecar.istio.io/inject: "false"
   name: {name}
 spec:
-  minReplicas: 0
   default:
     predictor:
 """ % API_VERSION
@@ -155,7 +155,7 @@ class KFServer(object):
         headers = {"content-type": "application/json", "Host": host}
         log.info("Sending request to InferenceService...")
         response = requests.post(
-            "http://cluster-local-gateway.istio-system/v1/models/"
+            "http://knative-local-gateway.istio-system/v1/models/"
             "%s:predict" % self.name, data=data,
             headers=headers)
         if response.status_code == 200:
@@ -247,21 +247,21 @@ def serve(model: Any,
     log.info("Model saved successfully at '%s'", model_filepath)
 
     # Take snapshot
-    task_info = rokutils.snapshot_pvc(volume_name,
-                                      bucket=rokutils.SERVING_BUCKET,
-                                      wait=True)
-    task = rokutils.get_task(task_info["task"]["id"],
-                             bucket=rokutils.SERVING_BUCKET)
-    new_pvc_name = "%s-pvc-%s" % (name, utils.random_string(5))
-    rokutils.hydrate_pvc_from_snapshot(task["result"]["event"]["object"],
-                                       task["result"]["event"]["version"],
-                                       new_pvc_name,
-                                       bucket=rokutils.SERVING_BUCKET)
+    #task_info = rokutils.snapshot_pvc(volume_name,
+    #                                  bucket=rokutils.SERVING_BUCKET,
+    #                                  wait=True)
+    #task = rokutils.get_task(task_info["task"]["id"],
+    #                         bucket=rokutils.SERVING_BUCKET)
+    #new_pvc_name = "%s-pvc-%s" % (name, utils.random_string(5))
+    #rokutils.hydrate_pvc_from_snapshot(task["result"]["event"]["object"],
+    #                                   task["result"]["event"]["version"],
+    #                                   new_pvc_name,
+    #                                   bucket=rokutils.SERVING_BUCKET)
 
     # Cleanup: remove dumped model and transformer assets from the current PVC
-    utils.rm_r(os.path.join(PREDICTOR_MODEL_DIR,
-                            os.path.basename(model_filepath)))
-    utils.rm_r(TRANSFORMER_ASSETS_DIR, silent=True)
+    #utils.rm_r(os.path.join(PREDICTOR_MODEL_DIR,
+    #                        os.path.basename(model_filepath)))
+    #utils.rm_r(TRANSFORMER_ASSETS_DIR, silent=True)
 
     # Need an absolute path from the *root* of the PVC. Add '/' if not exists.
     pvc_model_path = "/" + PREDICTOR_MODEL_DIR.lstrip(PVC_ROOT)
@@ -272,7 +272,7 @@ def serve(model: Any,
     kfserver = create_inference_service(
         name=name,
         predictor=predictor,
-        pvc_name=new_pvc_name,
+        pvc_name=volume_name,
         model_path=pvc_model_path,
         transformer=preprocessing_fn is not None)
 
@@ -392,7 +392,7 @@ def create_inference_service(name: str,
 
     if submit:
         _submit_inference_service(infs_spec, podutils.get_namespace())
-        _add_owner_references(name, pvc_name)
+        #_add_owner_references(name, pvc_name)
     return KFServer(name=name, spec=yaml_contents)
 
 
